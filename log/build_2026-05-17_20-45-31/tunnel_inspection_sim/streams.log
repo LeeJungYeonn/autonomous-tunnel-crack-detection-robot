@@ -1,0 +1,23 @@
+[1.581s] Invoking command in '/home/jungyeon/ros2_ws/build/tunnel_inspection_sim': PYTHONPATH=/home/jungyeon/ros2_ws/build/tunnel_inspection_sim/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jungyeon/ros2_ws/install/tunnel_inspection_sim/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /home/jungyeon/ros2_ws/build/tunnel_inspection_sim/build --no-deps symlink_data
+[2.003s] running develop
+[2.248s] running egg_info
+[2.249s] creating tunnel_inspection_sim.egg-info
+[2.249s] writing tunnel_inspection_sim.egg-info/PKG-INFO
+[2.250s] writing dependency_links to tunnel_inspection_sim.egg-info/dependency_links.txt
+[2.250s] writing entry points to tunnel_inspection_sim.egg-info/entry_points.txt
+[2.251s] writing requirements to tunnel_inspection_sim.egg-info/requires.txt
+[2.251s] writing top-level names to tunnel_inspection_sim.egg-info/top_level.txt
+[2.251s] writing manifest file 'tunnel_inspection_sim.egg-info/SOURCES.txt'
+[2.254s] reading manifest file 'tunnel_inspection_sim.egg-info/SOURCES.txt'
+[2.256s] writing manifest file 'tunnel_inspection_sim.egg-info/SOURCES.txt'
+[2.258s] running build_ext
+[2.259s] Creating /home/jungyeon/ros2_ws/install/tunnel_inspection_sim/lib/python3.10/site-packages/tunnel-inspection-sim.egg-link (link to .)
+[2.260s] 
+[2.260s] Installed /home/jungyeon/ros2_ws/build/tunnel_inspection_sim
+[2.260s] running symlink_data
+[2.260s] creating /home/jungyeon/ros2_ws/install/tunnel_inspection_sim/share/ament_index
+[2.261s] creating /home/jungyeon/ros2_ws/install/tunnel_inspection_sim/share/ament_index/resource_index
+[2.261s] creating /home/jungyeon/ros2_ws/install/tunnel_inspection_sim/share/ament_index/resource_index/packages
+[2.261s] symbolically linking /home/jungyeon/ros2_ws/build/tunnel_inspection_sim/resource/tunnel_inspection_sim -> /home/jungyeon/ros2_ws/install/tunnel_inspection_sim/share/ament_index/resource_index/packages
+[2.262s] symbolically linking /home/jungyeon/ros2_ws/build/tunnel_inspection_sim/package.xml -> /home/jungyeon/ros2_ws/install/tunnel_inspection_sim/share/tunnel_inspection_sim
+[2.333s] Invoked command in '/home/jungyeon/ros2_ws/build/tunnel_inspection_sim' returned '0': PYTHONPATH=/home/jungyeon/ros2_ws/build/tunnel_inspection_sim/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jungyeon/ros2_ws/install/tunnel_inspection_sim/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /home/jungyeon/ros2_ws/build/tunnel_inspection_sim/build --no-deps symlink_data

@@ -1,0 +1,15 @@
+[1.565s] Invoking command in '/home/jungyeon/ros2_ws/build/my-test-package': PYTHONPATH=/home/jungyeon/ros2_ws/build/my-test-package/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jungyeon/ros2_ws/install/my-test-package/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /home/jungyeon/ros2_ws/build/my-test-package/build --no-deps
+[2.000s] running develop
+[2.258s] running egg_info
+[2.258s] creating my_test_package.egg-info
+[2.258s] writing my_test_package.egg-info/PKG-INFO
+[2.259s] writing dependency_links to my_test_package.egg-info/dependency_links.txt
+[2.259s] writing top-level names to my_test_package.egg-info/top_level.txt
+[2.260s] writing manifest file 'my_test_package.egg-info/SOURCES.txt'
+[2.260s] reading manifest file 'my_test_package.egg-info/SOURCES.txt'
+[2.262s] writing manifest file 'my_test_package.egg-info/SOURCES.txt'
+[2.264s] running build_ext
+[2.265s] Creating /home/jungyeon/ros2_ws/install/my-test-package/lib/python3.10/site-packages/my-test-package.egg-link (link to .)
+[2.266s] 
+[2.266s] Installed /home/jungyeon/ros2_ws/build/my-test-package
+[2.315s] Invoked command in '/home/jungyeon/ros2_ws/build/my-test-package' returned '0': PYTHONPATH=/home/jungyeon/ros2_ws/build/my-test-package/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/jungyeon/ros2_ws/install/my-test-package/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /home/jungyeon/ros2_ws/build/my-test-package/build --no-deps
