@@ -2,13 +2,15 @@
 <sdf version="1.8">
   <model name="tunnel">
     <static>true</static>
+
     <link name="link">
 
       <visual name="visual">
         <pose>0 0 0 1.5708 0 0</pose>
         <geometry>
           <mesh>
-            <uri>model://tunnel/tunnel.obj</uri>
+            <uri>model://tunnel/tunnel_visual.obj</uri>
+            <scale>1 1 1</scale>
           </mesh>
         </geometry>
       </visual>
@@ -17,7 +19,8 @@
         <pose>0 0 0 1.5708 0 0</pose>
         <geometry>
           <mesh>
-            <uri>model://tunnel/tunnel.obj</uri>
+            <uri>model://tunnel/tunnel_collision.obj</uri>
+            <scale>1 1 1</scale>
           </mesh>
         </geometry>
       </collision>

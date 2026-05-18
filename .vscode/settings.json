@@ -1,0 +1,19 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/leejungyeon/ros2_ws/build/tunnel_inspection_sim",
+        "/home/leejungyeon/ros2_ws/install/tunnel_inspection_sim/lib/python3.10/site-packages",
+        "/home/leejungyeon/ros2_ws/build/my-test-package",
+        "/home/leejungyeon/ros2_ws/install/my-test-package/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/leejungyeon/ros2_ws/build/tunnel_inspection_sim",
+        "/home/leejungyeon/ros2_ws/install/tunnel_inspection_sim/lib/python3.10/site-packages",
+        "/home/leejungyeon/ros2_ws/build/my-test-package",
+        "/home/leejungyeon/ros2_ws/install/my-test-package/lib/python3.10/site-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "ROS2.distro": "humble"
+}
