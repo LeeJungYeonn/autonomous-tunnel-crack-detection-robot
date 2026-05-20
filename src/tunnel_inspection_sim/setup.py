@@ -27,8 +27,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            # 이 줄을 추가해 줘!
             'simple_drive = tunnel_inspection_sim.simple_drive:main',
+            'wall_following = tunnel_inspection_sim.wall_following:main',
         ],
     },
 )
