@@ -1,0 +1,4 @@
+export WAYLAND_DISPLAY=
+export QT_QPA_PLATFORM=xcb
+export MESA_GL_VERSION_OVERRIDE=3.3
+export IGN_IP=127.0.0.1
