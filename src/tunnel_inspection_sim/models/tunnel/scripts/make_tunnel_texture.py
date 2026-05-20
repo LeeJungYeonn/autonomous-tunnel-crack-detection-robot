@@ -17,14 +17,14 @@ GT_JSON = MODEL_DIR / "gt/cracks_uv_gt.json"
 # 없으면 자동으로 회색 texture 생성.
 BASE_TEXTURE = MODEL_DIR / "textures/tunnel_base.png"
 
-OUTPUT_TEXTURE = MODEL_DIR / "textures/tunnel_with_cracks.png"
+OUTPUT_TEXTURE = MODEL_DIR / "tunnel_with_cracks.png"
 
 # base texture가 없을 때 생성할 texture 크기
 TEXTURE_W = 4096
 TEXTURE_H = 4096
 
 # 기본 터널 색상 RGB
-BASE_COLOR = (145, 145, 145)
+BASE_COLOR = (200, 200, 200)
 # =========================
 
 

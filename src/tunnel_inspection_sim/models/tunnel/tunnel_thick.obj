@@ -1,6 +1,6 @@
 # Blender 5.1.1
 # www.blender.org
-mtllib Cylinder.mtl
+mtllib tunnel_thick.mtl
 o Tunnel_Inner
 v -5.000000 0.001472 -0.379964
 v 5.000000 0.001472 -0.379964
