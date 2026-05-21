@@ -56,3 +56,11 @@
   ros_type_name: "nav_msgs/msg/Odometry"
   gz_type_name: "ignition.msgs.Odometry"
   direction: GZ_TO_ROS
+
+  # TF(Transform) 데이터 브릿지 (Gazebo -> ROS2)
+# 로봇이 주행할 때 변하는 odom -> base_link 위치 정보를 전달함
+- ros_topic_name: "/tf"
+  gz_topic_name: "/tf"
+  ros_type_name: "tf2_msgs/msg/TFMessage"
+  gz_type_name: "ignition.msgs.Pose_V"
+  direction: GZ_TO_ROS
