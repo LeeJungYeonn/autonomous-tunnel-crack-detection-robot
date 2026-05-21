@@ -67,7 +67,7 @@
 
 
   <joint name="left_camera_joint" type="fixed">
-    <origin xyz="0.1 0.05 0.1" rpy="0 -0.8 0.785"/> 
+    <origin xyz="0.1 0.05 0.1" rpy="0 -0.55 1.05"/> 
     <parent link="base_link"/>
     <child link="left_camera_link"/>
   </joint>
@@ -91,9 +91,34 @@
 
   <link name="left_camera_optical_frame"/>
 
+  <joint name="top_camera_joint" type="fixed">
+    <origin xyz="0.1 0 0.12" rpy="0 -1.35 0"/>
+    <parent link="base_link"/>
+    <child link="top_camera_link"/>
+  </joint>
+
+  <link name="top_camera_link">
+    <visual>
+      <geometry><box size="0.01 0.01 0.01"/></geometry>
+      <material name="dark_gray"><color rgba="0.2 0.2 0.2 1.0"/></material>
+    </visual>
+    <inertial>
+      <mass value="0.001"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <joint name="top_camera_optical_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="-1.5708 0 -1.5708"/>
+    <parent link="top_camera_link"/>
+    <child link="top_camera_optical_frame"/>
+  </joint>
+
+  <link name="top_camera_optical_frame"/>
+
 
   <joint name="right_camera_joint" type="fixed">
-    <origin xyz="0.1 -0.05 0.1" rpy="0 -0.8 -0.785"/> 
+    <origin xyz="0.1 -0.05 0.1" rpy="0 -0.55 -1.05"/> 
     <parent link="base_link"/>
     <child link="right_camera_link"/>
   </joint>
@@ -165,6 +190,27 @@
     <sensor name="left_rgbd_camera" type="rgbd_camera">
       <topic>/left_camera</topic>
       <gz_frame_id>left_camera_optical_frame</gz_frame_id>
+      <update_rate>15.0</update_rate>
+      <camera>
+        <horizontal_fov>1.57</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+        </image>
+        <clip>
+          <near>0.1</near>
+          <far>10.0</far>
+        </clip>
+      </camera>
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+    </sensor>
+  </gazebo>
+
+  <gazebo reference="top_camera_link">
+    <sensor name="top_rgbd_camera" type="rgbd_camera">
+      <topic>/top_camera</topic>
+      <gz_frame_id>top_camera_optical_frame</gz_frame_id>
       <update_rate>15.0</update_rate>
       <camera>
         <horizontal_fov>1.57</horizontal_fov>

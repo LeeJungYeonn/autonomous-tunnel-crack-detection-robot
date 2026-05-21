@@ -34,7 +34,8 @@ class CrackDetectorNode(Node):
         self.camera_synchronizers = []
         self.logged_camera_frames = set()
         self.mapped_log_counts = {}
-        for camera_name in ('left', 'right'):
+        self.camera_names = ('left', 'right', 'top')
+        for camera_name in self.camera_names:
             self.create_camera_synchronizer(camera_name)
         
         # [시각화 캔버스 설정]
@@ -54,7 +55,7 @@ class CrackDetectorNode(Node):
             "✅ 시스템 준비 완료! "
             f"(터널 X: {self.tunnel_x_min:.1f}~{self.tunnel_x_max:.1f}, "
             f"odom 원점 월드 X: {self.odom_origin_world_x:.1f}, "
-            "카메라: left/right)"
+            f"카메라: {'/'.join(self.camera_names)})"
         )
 
     def create_camera_synchronizer(self, camera_name):
