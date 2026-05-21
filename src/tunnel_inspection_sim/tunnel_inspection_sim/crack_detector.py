@@ -34,6 +34,7 @@ class CrackDetectorNode(Node):
         self.camera_synchronizers = []
         self.logged_camera_frames = set()
         self.mapped_log_counts = {}
+        self.detection_log_counts = {}
         self.camera_names = ('left', 'right', 'top')
         for camera_name in self.camera_names:
             self.create_camera_synchronizer(camera_name)
@@ -43,6 +44,8 @@ class CrackDetectorNode(Node):
         self.tunnel_x_min = float(self.declare_parameter('tunnel_x_min', -5.0).value)
         self.tunnel_x_max = float(self.declare_parameter('tunnel_x_max', 5.0).value)
         self.odom_origin_world_x = float(self.declare_parameter('odom_origin_world_x', -4.0).value)
+        self.default_conf = float(self.declare_parameter('default_conf', 0.2).value)
+        self.top_conf = float(self.declare_parameter('top_conf', 0.1).value)
         self.tunnel_length = self.tunnel_x_max - self.tunnel_x_min
         if self.tunnel_length <= 0.0:
             self.get_logger().warn("터널 x 범위가 잘못되어 기본값(-5.0~5.0)을 사용합니다.")
@@ -55,7 +58,8 @@ class CrackDetectorNode(Node):
             "✅ 시스템 준비 완료! "
             f"(터널 X: {self.tunnel_x_min:.1f}~{self.tunnel_x_max:.1f}, "
             f"odom 원점 월드 X: {self.odom_origin_world_x:.1f}, "
-            f"카메라: {'/'.join(self.camera_names)})"
+            f"카메라: {'/'.join(self.camera_names)}, "
+            f"conf: default={self.default_conf:.2f}, top={self.top_conf:.2f})"
         )
 
     def create_camera_synchronizer(self, camera_name):
@@ -103,7 +107,16 @@ class CrackDetectorNode(Node):
         fx, fy, cx, cy = info_msg.k[0], info_msg.k[4], info_msg.k[2], info_msg.k[5]
         
         # 모델 추론
-        results = self.yolo_model(cv_img, conf=0.2, verbose=False)
+        conf = self.top_conf if camera_name == 'top' else self.default_conf
+        results = self.yolo_model(cv_img, conf=conf, verbose=False)
+        raw_detection_count = sum(len(r.boxes) for r in results)
+        detection_log_count = self.detection_log_counts.get(camera_name, 0)
+        if detection_log_count < 10:
+            self.get_logger().info(
+                f"{camera_name} YOLO detections: {raw_detection_count} "
+                f"(conf={conf:.2f})"
+            )
+            self.detection_log_counts[camera_name] = detection_log_count + 1
         
         for r in results:
             # Segmentation 모델이어도 BBox(네모 박스)는 동일하게 추출 가능!
