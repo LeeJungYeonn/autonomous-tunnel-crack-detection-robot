@@ -29,12 +29,11 @@ class CrackDetectorNode(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        # 동기화 구독
-        img_sub = message_filters.Subscriber(self, Image, '/left_camera/image')
-        depth_sub = message_filters.Subscriber(self, Image, '/left_camera/depth')
-        info_sub = message_filters.Subscriber(self, CameraInfo, '/left_camera/camera_info')
-        self.ts = message_filters.ApproximateTimeSynchronizer([img_sub, depth_sub, info_sub], 10, 0.1)
-        self.ts.registerCallback(self.sync_callback)
+        # 양쪽 RGB-D 카메라를 각각 동기화해서 같은 탐지/매핑 파이프라인으로 처리한다.
+        self.camera_subscribers = []
+        self.camera_synchronizers = []
+        for camera_name in ('left', 'right'):
+            self.create_camera_synchronizer(camera_name)
         
         # [시각화 캔버스 설정]
         self.map_w, self.map_h = 1000, 300
@@ -52,10 +51,36 @@ class CrackDetectorNode(Node):
         self.get_logger().info(
             "✅ 시스템 준비 완료! "
             f"(터널 X: {self.tunnel_x_min:.1f}~{self.tunnel_x_max:.1f}, "
-            f"odom 원점 월드 X: {self.odom_origin_world_x:.1f})"
+            f"odom 원점 월드 X: {self.odom_origin_world_x:.1f}, "
+            "카메라: left/right)"
         )
 
-    def sync_callback(self, img_msg, depth_msg, info_msg):
+    def create_camera_synchronizer(self, camera_name):
+        topic_prefix = f'/{camera_name}_camera'
+        img_sub = message_filters.Subscriber(self, Image, f'{topic_prefix}/image')
+        depth_sub = message_filters.Subscriber(self, Image, f'{topic_prefix}/depth')
+        info_sub = message_filters.Subscriber(
+            self,
+            CameraInfo,
+            f'{topic_prefix}/camera_info'
+        )
+        synchronizer = message_filters.ApproximateTimeSynchronizer(
+            [img_sub, depth_sub, info_sub],
+            10,
+            0.1
+        )
+        synchronizer.registerCallback(
+            lambda img_msg, depth_msg, info_msg, name=camera_name: self.sync_callback(
+                name,
+                img_msg,
+                depth_msg,
+                info_msg
+            )
+        )
+        self.camera_subscribers.extend([img_sub, depth_sub, info_sub])
+        self.camera_synchronizers.append(synchronizer)
+
+    def sync_callback(self, camera_name, img_msg, depth_msg, info_msg):
         cv_img = self.bridge.imgmsg_to_cv2(img_msg, desired_encoding='bgr8')
         cv_depth = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding='32FC1')
         
@@ -120,13 +145,22 @@ class CrackDetectorNode(Node):
                     
                     # 매핑 성공 시 초록색 박스로 변경!
                     cv2.rectangle(cv_img, (u1, v1), (u2, v2), (0, 255, 0), 2)
-                    cv2.putText(cv_img, "Mapped!", (u1, max(v1 - 10, 0)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    label = f"{camera_name}: Mapped!"
+                    cv2.putText(
+                        cv_img,
+                        label,
+                        (u1, max(v1 - 10, 0)),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (0, 255, 0),
+                        2
+                    )
 
                 except Exception as e:
-                    self.get_logger().warn(f"TF 에러: {e}")
+                    self.get_logger().warn(f"{camera_name} camera TF 에러: {e}")
                     continue
         
-        cv2.imshow("Camera", cv_img)
+        cv2.imshow(f"{camera_name.capitalize()} Camera", cv_img)
         cv2.imshow("Tunnel Unrolled Map", self.unrolled_map)
         cv2.waitKey(1)
 
