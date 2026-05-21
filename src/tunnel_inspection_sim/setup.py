@@ -29,6 +29,7 @@ setup(
         'console_scripts': [
             'simple_drive = tunnel_inspection_sim.simple_drive:main',
             'wall_following = tunnel_inspection_sim.wall_following:main',
+            'crack_detector = tunnel_inspection_sim.crack_detector:main',
         ],
     },
 )
