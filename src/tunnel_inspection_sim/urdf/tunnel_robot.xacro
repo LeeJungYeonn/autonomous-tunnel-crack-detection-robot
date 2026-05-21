@@ -187,25 +187,4 @@
     </sensor>
   </gazebo>
 
-  <gazebo reference="base_link">
-    <light name="robot_light" type="spot">
-      <pose>0.1 0 0.1 0 0 0</pose> 
-      
-      <diffuse>1 1 1 1</diffuse>
-      <specular>1 1 1 1</specular>
-      <attenuation>
-        <range>5</range> <linear>0.1</linear>
-      </attenuation>
-      
-      <direction>1 0 0</direction> 
-      
-      <pose>0.1 0 0.1 0 -0.3 0</pose> 
-
-      <spot>
-        <inner_angle>0.5</inner_angle>
-        <outer_angle>1.2</outer_angle> <falloff>1.0</falloff>
-      </spot>
-    </light>
-  </gazebo>
-
 </robot>
