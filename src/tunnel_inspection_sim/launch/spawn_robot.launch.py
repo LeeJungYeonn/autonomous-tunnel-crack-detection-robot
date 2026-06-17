@@ -34,7 +34,7 @@ def generate_launch_description():
         arguments=[
             '-name', 'turtlebot3_tunnel',
             '-file', urdf_path,         # 저장된 파일 경로를 가제보에 직접 던져줌
-            '-x', '-4.0', '-y', '0.0', '-z', '0.09' 
+            '-x', '-5.0', '-y', '0.0', '-z', '0.09' 
         ],
         output='screen'
     )

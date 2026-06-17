@@ -1,0 +1,11 @@
+crack_id,severity,target_diagonal_mm,target_world_x_m,target_theta_deg,status,best_camera,best_robot_x_m,best_center_depth_m,visible_corner_count,pixel_bbox_width_px,pixel_bbox_height_px,pixel_bbox_diag_px,center_pixel_x,center_pixel_y,min_margin_px
+crack_001,caution,115.000,-3.600,43.200,full_bbox,left,-3.600,0.333,4,75.971,119.402,141.521,85.049,75.406,9.906
+crack_002,danger,230.000,3.200,151.200,full_bbox,right,3.220,0.382,4,92.539,171.466,194.844,561.859,215.231,18.689
+crack_003,safe,65.000,-1.400,111.600,full_bbox,top,-1.110,0.461,4,35.421,25.661,43.740,444.575,21.194,9.223
+crack_004,caution,155.000,1.800,72.000,full_bbox,top,1.210,0.476,4,74.327,53.876,91.799,217.793,441.573,8.753
+crack_005,safe,45.000,-0.000,162.000,full_bbox,right,0.070,0.381,4,23.883,32.347,40.209,609.522,307.664,16.768
+crack_006,danger,180.000,3.800,36.000,full_bbox,left,3.830,0.356,4,93.464,158.517,184.020,64.029,146.910,10.366
+crack_007,caution,90.000,-2.800,136.800,full_bbox,right,-2.760,0.321,4,60.892,95.667,113.403,596.014,66.160,9.090
+crack_008,safe,75.000,-4.200,86.400,full_bbox,top,-4.860,0.509,4,32.060,16.677,36.138,300.169,459.278,10.774
+crack_009,danger,300.000,4.400,115.200,full_bbox,top,3.940,0.443,4,181.400,128.085,222.062,469.862,390.770,8.552
+crack_010,caution,140.000,0.800,28.800,full_bbox,left,0.860,0.370,4,58.291,109.034,123.637,40.362,211.789,8.639

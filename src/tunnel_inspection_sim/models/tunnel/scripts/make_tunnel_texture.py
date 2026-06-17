@@ -31,9 +31,9 @@ BASE_COLOR = (200, 200, 200)
 
 # 실제 터널 모델 스케일:
 #   x: -5~5 m = 길이 10 m
-#   inner radius: 약 0.35 m = 내경 0.7 m
+#   inner radius: 약 0.70 m = 내경 1.4 m
 TUNNEL_LENGTH_M = 10.0
-TUNNEL_INNER_RADIUS_M = 0.35
+TUNNEL_INNER_RADIUS_M = 0.70
 TUNNEL_INNER_DIAMETER_MM = TUNNEL_INNER_RADIUS_M * 2.0 * 1000.0
 TUNNEL_UNROLLED_ARC_MM = math.pi * TUNNEL_INNER_RADIUS_M * 1000.0
 
@@ -253,11 +253,64 @@ def measure_ordered_quad_m(ordered_pairs):
     return width_m, height_m, diagonal_m
 
 
+def tunnel_point_from_uv(uv):
+    u, v = uv
+    theta = (
+        (u - TEXTURE_U_MIN)
+        / (TEXTURE_U_MAX - TEXTURE_U_MIN)
+        * math.pi
+    )
+    x = v * TUNNEL_LENGTH_M - TUNNEL_LENGTH_M / 2.0
+    y = TUNNEL_INNER_RADIUS_M * math.cos(theta)
+    z = TUNNEL_INNER_RADIUS_M * math.sin(theta)
+    return np.array([x, y, z], dtype=np.float64)
+
+
+def measure_ordered_uv_quad_m(dst_uvs):
+    pts = np.array([tunnel_point_from_uv(uv) for uv in dst_uvs])
+    bottom_left, bottom_right, top_right, top_left = pts
+
+    width_m = 0.5 * (
+        np.linalg.norm(bottom_right - bottom_left)
+        + np.linalg.norm(top_right - top_left)
+    )
+    height_m = 0.5 * (
+        np.linalg.norm(top_left - bottom_left)
+        + np.linalg.norm(top_right - bottom_right)
+    )
+    diagonal_m = max(
+        np.linalg.norm(top_right - bottom_left),
+        np.linalg.norm(top_left - bottom_right),
+    )
+
+    return width_m, height_m, diagonal_m
+
+
 def scale_uvs_about_center(dst_uvs, scale):
     dst = np.array(dst_uvs, dtype=np.float64)
     center = dst.mean(axis=0)
     scaled = center + (dst - center) * scale
     return scaled.tolist()
+
+
+def scale_uvs_to_target_diagonal(dst_uvs, target_diag_mm):
+    _, _, current_diag_m = measure_ordered_uv_quad_m(dst_uvs)
+    if current_diag_m <= 0:
+        return dst_uvs, 0.0, 0.0
+
+    scale = (target_diag_mm / 1000.0) / current_diag_m
+    scaled = scale_uvs_about_center(dst_uvs, scale)
+
+    for _ in range(4):
+        _, _, scaled_diag_m = measure_ordered_uv_quad_m(scaled)
+        if scaled_diag_m <= 0:
+            break
+        correction = (target_diag_mm / 1000.0) / scaled_diag_m
+        scale *= correction
+        scaled = scale_uvs_about_center(dst_uvs, scale)
+
+    _, _, final_diag_m = measure_ordered_uv_quad_m(scaled)
+    return scaled, scale, final_diag_m
 
 
 def move_uvs_to_center(dst_uvs, target_center):
@@ -412,7 +465,9 @@ def main():
 
         ordered_pairs = sort_pairs_by_source_uv(pairs)
         dst_uvs = [p["target_uv"] for p in ordered_pairs]
-        current_width_m, current_height_m, current_diag_m = measure_ordered_quad_m(ordered_pairs)
+        current_width_m, current_height_m, current_diag_m = (
+            measure_ordered_uv_quad_m(dst_uvs)
+        )
 
         if current_diag_m <= 0:
             print(f"[SKIP] {crack_id}: invalid current diagonal")
@@ -422,12 +477,17 @@ def main():
             crack_id,
             DEFAULT_TARGET_DIAGONAL_MM
         )
-        scale = (target_diag_mm / 1000.0) / current_diag_m
-        dst_uvs = scale_uvs_about_center(dst_uvs, scale)
+        dst_uvs, scale, _ = scale_uvs_to_target_diagonal(
+            dst_uvs,
+            target_diag_mm
+        )
         target_uv_center = CRACK_TARGET_UV_CENTER.get(crack_id)
         dst_uvs = move_uvs_to_center(dst_uvs, target_uv_center)
-        target_width_mm = current_width_m * scale * 1000.0
-        target_height_mm = current_height_m * scale * 1000.0
+        target_width_m, target_height_m, target_diag_m = (
+            measure_ordered_uv_quad_m(dst_uvs)
+        )
+        target_width_mm = target_width_m * 1000.0
+        target_height_mm = target_height_m * 1000.0
         severity, marker_color = classify_crack_by_diagonal(target_diag_mm)
 
         us = [p[0] for p in dst_uvs]
@@ -447,7 +507,8 @@ def main():
             f"size=({max(us)-min(us):.4f}, {max(vs)-min(vs):.4f}), "
             f"center=({u_center:.2f}, {v_center:.2f}), "
             f"world_x={world_x_m:.2f}m, theta={theta_deg:.1f}deg, "
-            f"target_diag={target_diag_mm:.1f}mm, class={severity}"
+            f"target_diag={target_diag_m * 1000.0:.1f}mm, "
+            f"class={severity}"
         )
 
         if not is_reasonable_target_uv(dst_uvs, max_uv_size=0.25):
@@ -474,7 +535,7 @@ def main():
             "marker_color": marker_color,
             "safe_max_diagonal_mm": f"{SAFE_MAX_DIAGONAL_MM:.3f}",
             "danger_min_diagonal_mm": f"{DANGER_MIN_DIAGONAL_MM:.3f}",
-            "target_diagonal_mm": f"{target_diag_mm:.3f}",
+            "target_diagonal_mm": f"{target_diag_m * 1000.0:.3f}",
             "target_width_mm": f"{target_width_mm:.3f}",
             "target_height_mm": f"{target_height_mm:.3f}",
             "target_diagonal_to_tunnel_diameter": (

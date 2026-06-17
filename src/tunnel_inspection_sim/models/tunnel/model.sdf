@@ -10,7 +10,7 @@
         <geometry>
           <mesh>
             <uri>model://tunnel/tunnel_thick.obj</uri>
-            <scale>1 1 1</scale>
+            <scale>1 2 2</scale>
           </mesh>
         </geometry>
       </visual>
@@ -20,7 +20,7 @@
         <geometry>
           <mesh>
             <uri>model://tunnel/tunnel_thick.obj</uri>
-            <scale>1 1 1</scale>
+            <scale>1 2 2</scale>
           </mesh>
         </geometry>
       </collision>
