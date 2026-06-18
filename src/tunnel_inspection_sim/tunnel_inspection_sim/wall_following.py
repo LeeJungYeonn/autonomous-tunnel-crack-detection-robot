@@ -55,8 +55,8 @@ class WallFollowerNode(Node):
 
         twist = Twist()
 
-        # [종료 조건] 1. 전방에 0.4m 이내 장애물 감지 / 2. 양쪽 벽 거리가 1.5m 이상 (터널 탈출)
-        if d_front < 0.4 or (d_left + d_right) > 1.5:
+        # [종료 조건] 1. 전방에 0.4m 이내 장애물 감지 / 2. 양쪽 벽 거리가 2.0m 이상 (터널 탈출)
+        if d_front < 0.4 or (d_left + d_right) > 2.0:
             twist.linear.x = 0.0
             twist.angular.z = 0.0
             self.publisher_.publish(twist)
