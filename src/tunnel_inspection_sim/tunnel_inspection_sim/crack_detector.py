@@ -51,7 +51,17 @@ class CrackDetectorNode(Node):
             self.create_camera_synchronizer(camera_name)
 
         # [시각화 캔버스 설정]
-        self.map_w, self.map_h = 1000, 300
+        self.map_w, self.map_h = 1100, 430
+        self.map_margin_left = 55
+        self.map_margin_right = 25
+        self.map_margin_top = 36
+        self.map_margin_bottom = 115
+        self.map_plot_w = (
+            self.map_w - self.map_margin_left - self.map_margin_right
+        )
+        self.map_plot_h = (
+            self.map_h - self.map_margin_top - self.map_margin_bottom
+        )
         self.tunnel_x_min = float(
             self.declare_parameter('tunnel_x_min', -5.0).value
         )
@@ -91,6 +101,9 @@ class CrackDetectorNode(Node):
         self.max_bbox_area_ratio = float(
             self.declare_parameter('max_bbox_area_ratio', 0.35).value
         )
+        self.map_cluster_merge_px = int(
+            self.declare_parameter('map_cluster_merge_px', 55).value
+        )
         self.safe_max_diagonal_mm = float(
             self.declare_parameter(
                 'safe_max_diagonal_mm',
@@ -110,9 +123,8 @@ class CrackDetectorNode(Node):
             self.tunnel_x_max = 5.0
             self.tunnel_length = 10.0
 
-        self.unrolled_map = (
-            np.ones((self.map_h, self.map_w, 3), dtype=np.uint8) * 255
-        )
+        self.map_crack_clusters = []
+        self.unrolled_map = self.create_unrolled_map()
         self.get_logger().info(
             "시스템 준비 완료! "
             f"(터널 X: {self.tunnel_x_min:.1f}~{self.tunnel_x_max:.1f}, "
@@ -129,6 +141,347 @@ class CrackDetectorNode(Node):
             f"위험도 기준: safe<{self.safe_max_diagonal_mm:.0f}mm, "
             f"danger>={self.danger_min_diagonal_mm:.0f}mm)"
         )
+
+    def create_unrolled_map(self):
+        canvas = np.ones((self.map_h, self.map_w, 3), dtype=np.uint8) * 255
+        plot_left = self.map_margin_left
+        plot_top = self.map_margin_top
+        plot_right = self.map_margin_left + self.map_plot_w - 1
+        plot_bottom = self.map_margin_top + self.map_plot_h - 1
+
+        cv2.rectangle(
+            canvas,
+            (plot_left, plot_top),
+            (plot_right, plot_bottom),
+            (246, 246, 246),
+            -1
+        )
+        cv2.rectangle(
+            canvas,
+            (plot_left, plot_top),
+            (plot_right, plot_bottom),
+            (80, 80, 80),
+            1
+        )
+
+        cv2.putText(
+            canvas,
+            "Tunnel Unrolled Map",
+            (plot_left, 24),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (40, 40, 40),
+            2
+        )
+        cv2.putText(
+            canvas,
+            "x position from tunnel start",
+            (plot_left + 250, 24),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.45,
+            (90, 90, 90),
+            1
+        )
+
+        tick_count = int(math.floor(self.tunnel_length))
+        for meter in range(tick_count + 1):
+            u = meter / self.tunnel_length
+            px, _ = self.map_uv_to_pixel(u, 0.0)
+            grid_color = (210, 210, 210)
+            if meter == 0 or meter == tick_count:
+                grid_color = (150, 150, 150)
+            cv2.line(
+                canvas,
+                (px, plot_top),
+                (px, plot_bottom),
+                grid_color,
+                1
+            )
+            cv2.line(
+                canvas,
+                (px, plot_bottom),
+                (px, plot_bottom + 6),
+                (80, 80, 80),
+                1
+            )
+            label = f"{meter}m"
+            text_size, _ = cv2.getTextSize(
+                label,
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.42,
+                1
+            )
+            cv2.putText(
+                canvas,
+                label,
+                (px - text_size[0] // 2, plot_bottom + 24),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.42,
+                (50, 50, 50),
+                1
+            )
+
+        cv2.putText(
+            canvas,
+            "0m = robot spawn / tunnel start",
+            (plot_left, self.map_h - 12),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.42,
+            (90, 90, 90),
+            1
+        )
+        self.draw_severity_legend(canvas)
+        return canvas
+
+    def draw_severity_legend(self, canvas):
+        entries = [
+            ('safe <80mm', SEVERITY_COLORS_BGR['safe']),
+            ('caution 80-160mm', SEVERITY_COLORS_BGR['caution']),
+            ('danger >=160mm', SEVERITY_COLORS_BGR['danger']),
+        ]
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        scale = 0.4
+        thickness = 1
+        total_w = 0
+        for label, _ in entries:
+            text_size, _ = cv2.getTextSize(label, font, scale, thickness)
+            total_w += 18 + text_size[0]
+        total_w += 24 * (len(entries) - 1)
+
+        x = self.map_w - total_w - 12
+        y = 19
+        for label, color in entries:
+            cv2.circle(canvas, (x, y - 4), 5, color, -1)
+            cv2.putText(
+                canvas,
+                label,
+                (x + 12, y),
+                font,
+                scale,
+                (70, 70, 70),
+                thickness
+            )
+            text_size, _ = cv2.getTextSize(label, font, scale, thickness)
+            x += 18 + text_size[0] + 24
+
+    def map_uv_to_pixel(self, u, v):
+        u = max(0.0, min(1.0, u))
+        v = max(0.0, min(1.0, v))
+        px = self.map_margin_left + int(round(u * (self.map_plot_w - 1)))
+        py = self.map_margin_top + int(round(v * (self.map_plot_h - 1)))
+        return px, py
+
+    def draw_text_with_background(self, image, text, origin, color):
+        x, y = origin
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        scale = 0.42
+        thickness = 1
+        text_size, baseline = cv2.getTextSize(text, font, scale, thickness)
+        text_w, text_h = text_size
+        x = max(2, min(x, image.shape[1] - text_w - 6))
+        y = max(text_h + 4, min(y, image.shape[0] - baseline - 4))
+
+        cv2.rectangle(
+            image,
+            (x - 3, y - text_h - 3),
+            (x + text_w + 3, y + baseline + 3),
+            (255, 255, 255),
+            -1
+        )
+        cv2.rectangle(
+            image,
+            (x - 3, y - text_h - 3),
+            (x + text_w + 3, y + baseline + 3),
+            (210, 210, 210),
+            1
+        )
+        cv2.putText(image, text, (x, y), font, scale, color, thickness)
+
+    def draw_rotated_text(self, image, text, origin, color, angle=45):
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        scale = 0.42
+        thickness = 1
+        text_size, baseline = cv2.getTextSize(text, font, scale, thickness)
+        text_w, text_h = text_size
+        pad = 6
+        src_h = text_h + baseline + pad * 2
+        src_w = text_w + pad * 2
+        text_img = np.ones((src_h, src_w, 3), dtype=np.uint8) * 255
+        cv2.putText(
+            text_img,
+            text,
+            (pad, pad + text_h),
+            font,
+            scale,
+            color,
+            thickness
+        )
+
+        side = int(math.ceil(math.sqrt(src_w ** 2 + src_h ** 2))) + 2
+        square = np.ones((side, side, 3), dtype=np.uint8) * 255
+        x0 = (side - src_w) // 2
+        y0 = (side - src_h) // 2
+        square[y0:y0 + src_h, x0:x0 + src_w] = text_img
+
+        center = (side / 2.0, side / 2.0)
+        matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+        rotated = cv2.warpAffine(
+            square,
+            matrix,
+            (side, side),
+            flags=cv2.INTER_LINEAR,
+            borderValue=(255, 255, 255)
+        )
+        mask = np.any(rotated < 245, axis=2)
+        if not np.any(mask):
+            return
+
+        ys, xs = np.where(mask)
+        crop_x1, crop_x2 = xs.min(), xs.max() + 1
+        crop_y1, crop_y2 = ys.min(), ys.max() + 1
+        crop = rotated[crop_y1:crop_y2, crop_x1:crop_x2]
+        crop_mask = mask[crop_y1:crop_y2, crop_x1:crop_x2]
+
+        dst_x = int(round(origin[0]))
+        dst_y = int(round(origin[1]))
+        dst_x = max(0, min(dst_x, image.shape[1] - crop.shape[1]))
+        dst_y = max(0, min(dst_y, image.shape[0] - crop.shape[0]))
+        roi = image[
+            dst_y:dst_y + crop.shape[0],
+            dst_x:dst_x + crop.shape[1]
+        ]
+        roi[crop_mask] = crop[crop_mask]
+
+    def draw_vertical_dashed_line(self, image, x, y1, y2, color):
+        dash_len = 7
+        gap_len = 6
+        y = y1
+        while y <= y2:
+            cv2.line(
+                image,
+                (x, y),
+                (x, min(y + dash_len, y2)),
+                color,
+                1
+            )
+            y += dash_len + gap_len
+
+    def draw_crack_axis_marker(self, image, px, distance_m, color, label_slots):
+        plot_bottom = self.map_margin_top + self.map_plot_h - 1
+        label = f"{distance_m:.1f}m"
+        label_y = plot_bottom + 34
+        while any(
+            abs(px - slot_px) < 42 and abs(label_y - slot_y) < 18
+            for slot_px, slot_y in label_slots
+        ):
+            label_y += 18
+        label_slots.append((px, label_y))
+
+        cv2.line(
+            image,
+            (px, plot_bottom),
+            (px, plot_bottom + 9),
+            color,
+            1
+        )
+        self.draw_rotated_text(
+            image,
+            label,
+            (px - 8, label_y),
+            color,
+            angle=45
+        )
+
+    def find_map_crack_cluster(self, px, py):
+        best_cluster = None
+        best_dist_sq = self.map_cluster_merge_px * self.map_cluster_merge_px
+        for cluster in self.map_crack_clusters:
+            center_px = float(np.mean(cluster['px']))
+            center_py = float(np.mean(cluster['py']))
+            dx = px - center_px
+            dy = py - center_py
+            dist_sq = dx * dx + dy * dy
+            if dist_sq < best_dist_sq:
+                best_dist_sq = dist_sq
+                best_cluster = cluster
+        return best_cluster
+
+    def add_map_detection(
+        self,
+        px,
+        py,
+        distance_from_start_m,
+        diagonal_mm,
+        length_mm,
+        width_mm
+    ):
+        cluster = self.find_map_crack_cluster(px, py)
+        if cluster is None:
+            cluster = {
+                'px': [],
+                'py': [],
+                'distance_m': [],
+                'diagonal_mm': [],
+                'length_mm': [],
+                'width_mm': [],
+            }
+            self.map_crack_clusters.append(cluster)
+
+        cluster['px'].append(px)
+        cluster['py'].append(py)
+        cluster['distance_m'].append(distance_from_start_m)
+        cluster['diagonal_mm'].append(diagonal_mm)
+        cluster['length_mm'].append(length_mm)
+        cluster['width_mm'].append(width_mm)
+        self.render_unrolled_map()
+
+    def render_unrolled_map(self):
+        canvas = self.create_unrolled_map()
+        plot_top = self.map_margin_top
+        plot_bottom = self.map_margin_top + self.map_plot_h - 1
+        label_slots = []
+
+        for cluster in self.map_crack_clusters:
+            avg_diag_mm = float(np.mean(cluster['diagonal_mm']))
+            severity = self.classify_crack(avg_diag_mm)
+            color = self.severity_color(severity)
+            start_m = min(cluster['distance_m'])
+            end_m = max(cluster['distance_m'])
+            midpoint_m = 0.5 * (start_m + end_m)
+            midpoint_u = midpoint_m / self.tunnel_length
+            midpoint_px, _ = self.map_uv_to_pixel(midpoint_u, 0.0)
+            self.draw_vertical_dashed_line(
+                canvas,
+                midpoint_px,
+                plot_top,
+                plot_bottom,
+                color
+            )
+            self.draw_crack_axis_marker(
+                canvas,
+                midpoint_px,
+                midpoint_m,
+                color,
+                label_slots
+            )
+
+        for cluster in self.map_crack_clusters:
+            avg_diag_mm = float(np.mean(cluster['diagonal_mm']))
+            severity = self.classify_crack(avg_diag_mm)
+            color = self.severity_color(severity)
+            for px, py in zip(cluster['px'], cluster['py']):
+                cv2.circle(canvas, (px, py), 5, color, -1)
+
+            center_px = int(round(float(np.mean(cluster['px']))))
+            center_py = int(round(float(np.mean(cluster['py']))))
+            self.draw_text_with_background(
+                canvas,
+                f"{avg_diag_mm:.0f}mm",
+                (center_px + 9, center_py - 8),
+                color
+            )
+
+        self.unrolled_map = canvas
 
     def create_camera_synchronizer(self, camera_name):
         topic_prefix = f'/{camera_name}_camera'
@@ -618,22 +971,21 @@ class CrackDetectorNode(Node):
                     u = (world_x - self.tunnel_x_min) / self.tunnel_length
                     if u < 0.0 or u > 1.0:
                         continue
+                    distance_from_start_m = world_x - self.tunnel_x_min
 
                     theta = math.atan2(world_z, world_y)
                     v = max(0, min(1, theta / math.pi))
 
-                    px = int(round(u * (self.map_w - 1)))
-                    py = int(round(v * (self.map_h - 1)))
-                    px = max(0, min(self.map_w - 1, px))
-                    py = max(0, min(self.map_h - 1, py))
+                    px, py = self.map_uv_to_pixel(u, v)
 
-                    # 전개도 핀 마커 색상은 실제 크기 기반 위험도로 구분한다.
-                    cv2.circle(
-                        self.unrolled_map,
-                        (px, py),
-                        5,
-                        marker_color,
-                        -1
+                    # 전개도는 같은 균열로 보이는 반복 탐지를 cluster로 묶어 렌더링한다.
+                    self.add_map_detection(
+                        px,
+                        py,
+                        distance_from_start_m,
+                        diagonal_mm,
+                        length_mm,
+                        width_mm
                     )
                     log_count = self.mapped_log_counts.get(camera_name, 0)
                     if log_count < 5:
@@ -642,6 +994,7 @@ class CrackDetectorNode(Node):
                             f"world=({world_x:.2f}, "
                             f"{world_y:.2f}, {world_z:.2f}), "
                             f"uv=({u:.2f}, {v:.2f}), pixel=({px}, {py}), "
+                            f"x_from_start={distance_from_start_m:.2f}m, "
                             f"size=({length_mm:.0f}x{width_mm:.0f}mm, "
                             f"diag={diagonal_mm:.0f}mm), "
                             f"class={severity}, "
